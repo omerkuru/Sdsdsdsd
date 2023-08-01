@@ -1,0 +1,68 @@
+Evet, ESP-IDF ile AES şifreleme ve şifre çözme işlemleri yapılabilir. Ancak burada doğrudan kodu çalıştıramıyorum, sadece size örnek bir kod sunabilirim. İşte temel bir örnek:
+
+1. Öncelikle, ESP-IDF için gerekli kütüphaneleri dahil etmeniz gerekmektedir:
+```cpp
+#include "esp_system.h"
+#include "mbedtls/aes.h"
+#include "mbedtls/base64.h"
+```
+
+2. AES şifreleme fonksiyonu:
+```cpp
+void aes_encrypt(uint8_t *input, uint8_t *key, uint8_t *output) {
+    mbedtls_aes_context ctx;
+    mbedtls_aes_init(&ctx);
+    mbedtls_aes_setkey_enc(&ctx, key, 128);
+    mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT, input, output);
+    mbedtls_aes_free(&ctx);
+}
+```
+
+3. AES şifre çözme fonksiyonu:
+```cpp
+void aes_decrypt(uint8_t *input, uint8_t *key, uint8_t *output) {
+    mbedtls_aes_context ctx;
+    mbedtls_aes_init(&ctx);
+    mbedtls_aes_setkey_dec(&ctx, key, 128);
+    mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_DECRYPT, input, output);
+    mbedtls_aes_free(&ctx);
+}
+```
+
+4. Base64 kodlama ve kod çözme fonksiyonları:
+```cpp
+size_t base64_encode(const uint8_t *input, size_t input_len, char *output, size_t output_len) {
+    size_t olen;
+    mbedtls_base64_encode((unsigned char *)output, output_len, &olen, input, input_len);
+    return olen;
+}
+
+size_t base64_decode(const char *input, size_t input_len, uint8_t *output, size_t output_len) {
+    size_t olen;
+    mbedtls_base64_decode(output, output_len, &olen, (const unsigned char *)input, input_len);
+    return olen;
+}
+```
+
+5. Ana fonksiyon içinde bu fonksiyonları kullanma:
+```cpp
+extern "C" void app_main() {
+    uint8_t key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
+    uint8_t input[16] = "Merhaba Dunya!"; // 16 byte'lık bir mesaj
+    uint8_t encrypted[16];
+    uint8_t decrypted[16];
+    char base64_output[64];
+
+    // Şifreleme
+    aes_encrypt(input, key, encrypted);
+    base64_encode(encrypted, 16, base64_output, sizeof(base64_output));
+    printf("Şifreli metin (Base64): %s\n", base64_output);
+
+    // Şifre çözme
+    size_t decoded_len = base64_decode(base64_output, strlen(base64_output), encrypted, 16);
+    aes_decrypt(encrypted, key, decrypted);
+    printf("Çözülen metin: %s\n", decrypted);
+}
+```
+
+Bu kod örneğini ESP-IDF projesine dahil ederek çalıştırabilirsiniz. Ancak kodu kendi ihtiyaçlarınıza göre ayarlamalısınız. Özellikle anahtar yönetimi ve hata yönetimi gibi konulara dikkat edilmelidir. Bu basit örnek sadece temel bir fikir sunmaktadır.
