@@ -1,0 +1,34 @@
+void pkcs7_padding(uint8_t *input, int original_length, uint8_t *output, int padded_length) {
+    int padding_len = padded_length - original_length;
+    memcpy(output, input, original_length);
+    for (int i = 0; i < padding_len; i++) {
+        output[original_length + i] = padding_len;
+    }
+}
+
+extern "C" void app_main() {
+    uint8_t key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
+    uint8_t input[18] = "Merhaba Dunya!123"; // 18 baytlık bir mesaj.
+    uint8_t padded_input[32]; // 2 blok için yer ayır.
+    uint8_t encrypted[32];
+    uint8_t decrypted[32];
+    char base64_output[64];
+
+    // Padding
+    pkcs7_padding(input, 18, padded_input, 32);
+
+    // Şifreleme (2 blok için)
+    aes_encrypt(padded_input, key, encrypted);
+    aes_encrypt(padded_input + 16, key, encrypted + 16);
+    
+    base64_encode(encrypted, 32, base64_output, sizeof(base64_output));
+    printf("Şifreli metin (Base64): %s\n", base64_output);
+
+    // Şifre çözme (2 blok için)
+    size_t decoded_len = base64_decode(base64_output, strlen(base64_output), encrypted, 32);
+    aes_decrypt(encrypted, key, decrypted);
+    aes_decrypt(encrypted + 16, key, decrypted + 16);
+    // Padding çözme işlemini de ekleyebilirsiniz
+
+    printf("Çözülen metin (ilk 18 karakter): %.*s\n", 18, decrypted);
+}
