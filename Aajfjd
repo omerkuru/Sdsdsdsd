@@ -1,0 +1,35 @@
+import React, { useEffect } from 'react';
+import { View, Text, Button } from 'react-native';
+import Animated, { Easing, withRepeat, useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
+
+function Countdown() {
+  const countdownValue = useSharedValue(10); // Örnek olarak 10'dan başlatıyoruz
+
+  useEffect(() => {
+    countdownValue.value = withRepeat(
+      withTiming(countdownValue.value - 1, {
+        duration: 1000,
+        easing: Easing.linear,
+      }),
+      10, // 10 kez tekrarla
+      false
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: countdownValue.value > 0 ? 1 : 0.5,
+    };
+  });
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Animated.Text style={[{ fontSize: 40 }, animatedStyle]}>
+        {countdownValue.value.toFixed(0)}
+      </Animated.Text>
+      <Button title="Reset" onPress={() => (countdownValue.value = 10)} />
+    </View>
+  );
+}
+
+export default Countdown;
